@@ -4,7 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; form-action 'none'; base-uri 'none'">
-<title>腎機能計算ノート — MedKit</title>
+<title>MedKit｜白衣のポケット計算ノート — 腎機能・検査値・輸液</title>
+<meta name="description" content="腎機能（eGFR・eCCr）・検査値・輸液の計算をブラウザだけで。入力データを保存も送信もしない、完全オフラインの医療系計算ノート。薬剤師アースキーの個人開発ツールです。">
+<!-- OGP（SNS・チャットでリンクを共有したときのカード表示用。og:imageはホスティング先が決まり次第追加） -->
+<meta property="og:title" content="MedKit｜白衣のポケット計算ノート">
+<meta property="og:description" content="腎機能（eGFR・eCCr）・検査値・輸液の計算をブラウザだけで。保存も送信もしない完全オフラインの計算ノート。個人開発・学習用。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MedKit">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:url" content="https://github.com/EarthKey/MedKit">
+<meta name="twitter:card" content="summary">
 <style>
   :root {
     --paper: #f7f4ee;
@@ -254,6 +263,13 @@
   .notes li { margin-bottom: 6px; }
   .notes li strong { color: #7a3b2e; }
 
+  /* サイト紹介カード */
+  .about { border-left: 4px solid var(--accent); }
+  .about p.about-lead { font-size: .9rem; margin-bottom: 10px; }
+  .about ul.about-notes { padding-left: 1.3em; font-size: .84rem; color: var(--ink-soft); }
+  .about ul.about-notes li { margin-bottom: 5px; }
+  .about ul.about-notes strong { color: var(--ink); }
+
   .glossary dt { font-weight: 600; font-size: .86rem; margin-top: 8px; }
   .glossary dd { font-size: .84rem; color: var(--ink-soft); padding-left: 1em; }
 
@@ -281,6 +297,17 @@
     <h1 id="app-title">腎機能計算ノート</h1>
     <p class="sub" id="app-sub">eGFR・eCCr — 薬物投与量設定に使用する腎機能推算式（日本人向け）</p>
   </header>
+
+  <!-- サイト紹介 -->
+  <section class="card about">
+    <h2>このサイトについて</h2>
+    <p class="about-lead"><strong>MedKit</strong> は、薬剤師の <strong>アースキー</strong> が個人開発している「白衣のポケットに入る計算ノート」です。腎機能（eGFR・eCCr）・検査値・輸液の計算を、上のタブを切り替えるだけで使えます。</p>
+    <ul class="about-notes">
+      <li><strong>完全オフライン・登録不要</strong> — 入力したデータはどこにも保存・送信されません。ページを閉じればすべて消えます。</li>
+      <li><strong>個人開発・学習用</strong> — 作者の所属施設・団体とは無関係の個人プロジェクトです。結果はすべて参考値であり、臨床判断は必ず添付文書・ガイドライン・成書で確認してください。</li>
+      <li>各計算カードの「▸ 計算式を見る」で、どの式に基づいて計算しているかをいつでも確認できます。</li>
+    </ul>
+  </section>
 
   <div class="tabbar">
     <button class="tabbtn active" data-tab="renal" type="button">腎機能</button>
@@ -826,7 +853,8 @@
   <footer>
     <p class="line">※本ツールの結果はすべて参考値です。最終判断は必ず添付文書・ガイドラインで確認してください。</p>
     <p>完全オフライン動作 / 入力データはどこにも保存・送信されません<br>
-    腎機能タブの参考: 日本腎臓病薬物療法学会「eGFR・eCCrの計算」（jsnp.org/egfr/）</p>
+    腎機能タブの参考: 日本腎臓病薬物療法学会「eGFR・eCCrの計算」（jsnp.org/egfr/）<br>
+    MedKit — 個人開発・学習用 / 作者: アースキー（薬剤師）</p>
   </footer>
 
 </div>
