@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; form-action 'none'; base-uri 'none'">
+<title>腎機能計算ノート — MedKit</title>
+<style>
+  :root {
+    --paper: #f7f4ee;
+    --card: #fffdf9;
+    --ink: #2b3a42;
+    --ink-soft: #5c6b73;
+    --accent: #0f6e5f;       /* 深い青緑（白衣ポケットの手帳の表紙色） */
+    --accent-soft: #e3efec;
+    --rule: #d9d2c5;
+    --warn-bg: #fdf6e8;
+    --warn-line: #c9a45c;
+    --danger: #a4463c;
+    --ok: #2f7d4f;
+    --mono: "Consolas", "Courier New", monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(43,58,66,.035) 31px, rgba(43,58,66,.035) 32px);
+    color: var(--ink);
+    font-family: "Yu Gothic UI", "Yu Gothic", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+    line-height: 1.7;
+    padding: 24px 16px 64px;
+  }
+  .sheet { max-width: 780px; margin: 0 auto; }
+
+  header {
+    border-left: 6px solid var(--accent);
+    padding: 4px 0 4px 18px;
+    margin-bottom: 22px;
+  }
+  header h1 {
+    font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+    font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+    letter-spacing: .08em;
+    font-weight: 600;
+  }
+  header p.sub {
+    color: var(--ink-soft);
+    font-size: .85rem;
+    letter-spacing: .1em;
+    margin-top: 2px;
+  }
+
+  /* タブ */
+  .tabbar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 22px;
+    border-bottom: 2px solid var(--rule);
+  }
+  .tabbtn {
+    font-family: inherit;
+    font-size: .95rem;
+    letter-spacing: .1em;
+    padding: 10px 22px;
+    border: 1px solid var(--rule);
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    background: #ece7dc;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transform: translateY(2px);
+  }
+  .tabbtn.active {
+    background: var(--card);
+    color: var(--accent);
+    font-weight: 600;
+    border-color: var(--rule);
+    transform: translateY(0);
+    box-shadow: 0 -2px 0 var(--accent) inset;
+  }
+  .tabpanel { display: none; }
+  .tabpanel.active { display: block; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    box-shadow: 2px 3px 0 rgba(43,58,66,.08);
+    padding: 22px 20px;
+    margin-bottom: 22px;
+  }
+  .card h2 {
+    font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+    font-size: 1.05rem;
+    letter-spacing: .08em;
+    color: var(--accent);
+    border-bottom: 1px dashed var(--rule);
+    padding-bottom: 8px;
+    margin-bottom: 6px;
+  }
+  .card p.desc {
+    font-size: .82rem;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+  }
+
+  .field {
+    display: grid;
+    grid-template-columns: 12em 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid #efeae0;
+  }
+  .field:last-of-type { border-bottom: none; }
+  .field label { font-size: .9rem; }
+  .field label .opt {
+    font-size: .7rem; color: var(--ink-soft);
+    border: 1px solid var(--rule); border-radius: 3px;
+    padding: 0 4px; margin-left: 6px; vertical-align: 1px;
+  }
+  .field input[type="number"], .field select {
+    width: 100%; max-width: 180px;
+    font-family: var(--mono);
+    font-size: 1.02rem;
+    padding: 7px 10px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: #fff;
+    color: var(--ink);
+    text-align: right;
+  }
+  .field select { font-family: inherit; text-align: left; }
+  .field input:focus, .field select:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+  }
+  .field .unit { color: var(--ink-soft); font-size: .82rem; min-width: 4.5em; }
+  .sexwrap { display: flex; gap: 18px; }
+  .sexwrap label {
+    display: flex; align-items: center; gap: 6px;
+    cursor: pointer; font-size: .95rem;
+  }
+  .sexwrap input { accent-color: var(--accent); width: 17px; height: 17px; }
+
+  .btnrow { display: flex; gap: 12px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+  button {
+    font-family: inherit;
+    font-size: .92rem;
+    letter-spacing: .15em;
+    padding: 9px 30px;
+    border-radius: 3px;
+    border: 1px solid var(--accent);
+    cursor: pointer;
+  }
+  button:active { transform: translateY(1px); }
+  .btn-calc { background: var(--accent); color: #fff; box-shadow: 2px 2px 0 rgba(15,110,95,.3); }
+  .btn-calc:hover { background: #0c5c4f; }
+  .btn-reset { background: transparent; color: var(--accent); }
+  .btn-reset:hover { background: var(--accent-soft); }
+  .errmsg { color: var(--danger); font-size: .84rem; text-align: center; margin-top: 10px; min-height: 1.4em; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+  th, td {
+    border: 1px solid var(--rule);
+    padding: 9px 12px;
+    font-size: .88rem;
+    text-align: left;
+  }
+  th { background: var(--accent-soft); font-weight: 600; width: 56%; }
+  td.value {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    text-align: right;
+    background: #fff;
+    white-space: nowrap;
+  }
+  td.value .u { font-family: inherit; font-size: .72rem; color: var(--ink-soft); margin-left: 6px; }
+  td.value.empty { color: #b8b2a5; }
+
+  /* CKDステージバッジ */
+  .stage {
+    display: inline-block;
+    font-size: .78rem;
+    border-radius: 3px;
+    padding: 1px 8px;
+    margin-left: 8px;
+    color: #fff;
+    vertical-align: 1px;
+  }
+  .stage.G1 { background: #2f7d4f; } .stage.G2 { background: #6a9a3d; }
+  .stage.G3a { background: #b98a2e; } .stage.G3b { background: #c46f2c; }
+  .stage.G4 { background: #b04a35; } .stage.G5 { background: #7d2f3f; }
+
+  /* 判定バッジ */
+  .judge {
+    display: inline-block;
+    font-size: .76rem;
+    border-radius: 3px;
+    padding: 1px 8px;
+    margin-left: 8px;
+    color: #fff;
+    vertical-align: 1px;
+  }
+  .judge.low { background: #b04a35; }
+  .judge.ok { background: var(--ok); }
+  .judge.high { background: #b98a2e; }
+  .judge.over { background: var(--danger); }
+
+  .minor { display: flex; gap: 16px; flex-wrap: wrap; }
+  .minor .box { flex: 1 1 240px; }
+  .minor h3 { font-size: .9rem; color: var(--ink-soft); font-weight: 600; margin-bottom: 6px; }
+
+  /* 計算式トグル */
+  details.formula {
+    margin-top: 14px;
+    border: 1px dashed var(--rule);
+    border-radius: 4px;
+    background: #faf7f0;
+    font-size: .84rem;
+  }
+  details.formula summary {
+    cursor: pointer;
+    padding: 8px 14px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: .06em;
+    list-style: none;
+    user-select: none;
+  }
+  details.formula summary::-webkit-details-marker { display: none; }
+  details.formula summary::before { content: "▸ "; }
+  details.formula[open] summary::before { content: "▾ "; }
+  details.formula summary:hover { background: var(--accent-soft); border-radius: 4px 4px 0 0; }
+  details.formula .fx {
+    padding: 2px 16px 12px;
+    color: var(--ink-soft);
+    border-top: 1px dashed var(--rule);
+  }
+  details.formula .fx p { margin-top: 8px; }
+  details.formula .fx code {
+    font-family: var(--mono);
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1px 6px;
+    color: var(--ink);
+    font-size: .86em;
+  }
+
+  .notes { background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 4px; }
+  .notes h2 { color: #8a6a26; border-color: #e2d2ab; }
+  .notes ul { padding-left: 1.3em; font-size: .84rem; color: #5a4b28; }
+  .notes li { margin-bottom: 6px; }
+  .notes li strong { color: #7a3b2e; }
+
+  .glossary dt { font-weight: 600; font-size: .86rem; margin-top: 8px; }
+  .glossary dd { font-size: .84rem; color: var(--ink-soft); padding-left: 1em; }
+
+  footer {
+    text-align: center; color: var(--ink-soft);
+    font-size: .75rem; letter-spacing: .06em; margin-top: 30px;
+  }
+  footer .line { color: var(--danger); font-weight: 600; font-size: .8rem; margin-bottom: 4px; }
+
+  @media (max-width: 560px) {
+    .field { grid-template-columns: 1fr; gap: 4px; padding: 9px 0; }
+    .field .unit { min-width: 0; }
+    .field input[type="number"], .field select { max-width: none; }
+    th { width: 50%; }
+    th, td { padding: 8px 8px; font-size: .82rem; }
+    td.value { font-size: 1rem; }
+    .tabbtn { padding: 9px 12px; font-size: .86rem; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header>
+    <h1 id="app-title">腎機能計算ノート</h1>
+    <p class="sub" id="app-sub">eGFR・eCCr — 薬物投与量設定に使用する腎機能推算式（日本人向け）</p>
+  </header>
+
+  <div class="tabbar">
+    <button class="tabbtn active" data-tab="renal" type="button">腎機能</button>
+    <button class="tabbtn" data-tab="labs" type="button">検査値</button>
+    <button class="tabbtn" data-tab="infusion" type="button">輸液</button>
+  </div>
+
+  <!-- ============ 腎機能タブ ============ -->
+  <div class="tabpanel active" id="tab-renal">
+
+    <!-- 入力 -->
+    <section class="card">
+      <h2>患者情報の入力</h2>
+      <div class="field">
+        <label for="height">身長</label>
+        <input type="number" id="height" inputmode="decimal" min="0" step="0.1" placeholder="160">
+        <span class="unit">cm</span>
+      </div>
+      <div class="field">
+        <label for="weight">体重</label>
+        <input type="number" id="weight" inputmode="decimal" min="0" step="0.1" placeholder="50">
+        <span class="unit">kg</span>
+      </div>
+      <div class="field">
+        <label for="age">年齢</label>
+        <input type="number" id="age" inputmode="numeric" min="18" step="1" placeholder="70">
+        <span class="unit">歳</span>
+      </div>
+      <div class="field">
+        <label>性別</label>
+        <div class="sexwrap">
+          <label><input type="radio" name="sex" value="M" checked>男性</label>
+          <label><input type="radio" name="sex" value="F">女性</label>
+        </div>
+        <span class="unit"></span>
+      </div>
+      <div class="field">
+        <label for="scr">血清クレアチニン (S-Cr)</label>
+        <input type="number" id="scr" inputmode="decimal" min="0" step="0.01" placeholder="0.80">
+        <span class="unit">mg/dL</span>
+      </div>
+      <div class="field">
+        <label for="scysc">血清シスタチンC (S-CysC)<span class="opt">任意</span></label>
+        <input type="number" id="scysc" inputmode="decimal" min="0" step="0.01" placeholder="1.00">
+        <span class="unit">mg/L</span>
+      </div>
+      <div class="btnrow">
+        <button class="btn-reset" type="button" data-reset="renal">リセット</button>
+        <button class="btn-calc" type="button" data-calc="renal">計 算</button>
+      </div>
+      <p class="errmsg" id="err-renal"></p>
+    </section>
+
+    <!-- S-Crから計算 -->
+    <section class="card">
+      <h2>S-Cr から計算</h2>
+      <table>
+        <tr>
+          <th>eGFRcr（標準化eGFR）<span id="stage-badge"></span></th>
+          <td class="value empty" id="r-egfr-std">— <span class="u">mL/min/1.73m²</span></td>
+        </tr>
+        <tr>
+          <th>体表面積未補正eGFRcr（個別化eGFR）</th>
+          <td class="value empty" id="r-egfr-ind">— <span class="u">mL/min</span></td>
+        </tr>
+        <tr>
+          <th>eCCr（個別化eCCr / Cockcroft-Gault式）</th>
+          <td class="value empty" id="r-eccr-ind">— <span class="u">mL/min</span></td>
+        </tr>
+        <tr>
+          <th>体表面積補正eCCr（標準化eCCr）</th>
+          <td class="value empty" id="r-eccr-std">— <span class="u">mL/min/1.73m²</span></td>
+        </tr>
+      </table>
+      <details class="formula">
+        <summary>計算式を見る</summary>
+        <div class="fx">
+          <p><strong>eGFRcr（標準化）</strong> — 日本人GFR推算式（JSN 2008）<br>
+          <code>194 × Cr⁻¹·⁰⁹⁴ × 年齢⁻⁰·²⁸⁷</code>（女性はさらに <code>× 0.739</code>）</p>
+          <p><strong>個別化eGFR</strong><br>
+          <code>標準化eGFR × BSA ÷ 1.73</code></p>
+          <p><strong>eCCr（個別化）</strong> — Cockcroft-Gault式<br>
+          <code>(140 − 年齢) × 体重 ÷ (72 × Cr)</code>（女性はさらに <code>× 0.85</code>）</p>
+          <p><strong>標準化eCCr</strong><br>
+          <code>個別化eCCr × 1.73 ÷ BSA</code></p>
+        </div>
+      </details>
+    </section>
+
+    <!-- S-CysCから計算 -->
+    <section class="card">
+      <h2>S-CysC から計算</h2>
+      <table>
+        <tr>
+          <th>eGFRcys（標準化eGFRcys）</th>
+          <td class="value empty" id="r-cys-std">— <span class="u">mL/min/1.73m²</span></td>
+        </tr>
+        <tr>
+          <th>体表面積未補正eGFRcys（個別化eGFRcys）</th>
+          <td class="value empty" id="r-cys-ind">— <span class="u">mL/min</span></td>
+        </tr>
+      </table>
+      <details class="formula">
+        <summary>計算式を見る</summary>
+        <div class="fx">
+          <p><strong>eGFRcys（標準化）</strong> — 日本人向け推算式<br>
+          <code>(104 × CysC⁻¹·⁰¹⁹ × 0.996^年齢) − 8</code>（女性は −8 の前に <code>× 0.929</code>）</p>
+          <p><strong>個別化eGFRcys</strong><br>
+          <code>標準化eGFRcys × BSA ÷ 1.73</code></p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 体格 -->
+    <section class="card">
+      <h2>体格の参考値</h2>
+      <div class="minor">
+        <div class="box">
+          <h3>体表面積（Du Bois式）</h3>
+          <table><tr><td class="value empty" id="r-bsa">— <span class="u">m²</span></td></tr></table>
+        </div>
+        <div class="box">
+          <h3>理想体重（BMI 22 基準）</h3>
+          <table><tr><td class="value empty" id="r-ibw">— <span class="u">kg</span></td></tr></table>
+        </div>
+      </div>
+      <details class="formula">
+        <summary>計算式を見る</summary>
+        <div class="fx">
+          <p><strong>体表面積（BSA）</strong> — Du Bois式<br>
+          <code>0.007184 × 身長(cm)^0.725 × 体重(kg)^0.425</code></p>
+          <p><strong>理想体重（IBW）</strong> — BMI 22 基準<br>
+          <code>22 × 身長(m)²</code></p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 腎機能の注意 -->
+    <section class="card notes">
+      <h2>読みかた・注意（腎機能）</h2>
+      <ul>
+        <li>eGFRは筋肉量が減少している患者（長期臥床・るい痩など）では<strong>高めに推算</strong>されます。</li>
+        <li>Crは尿細管からも分泌されるため、CG式のeCCrは若年者でGFRより<strong>約30%高め</strong>に出ます（eCCr × 0.789 ≒ 個別化eGFR の換算が用いられます）。</li>
+        <li>eCCrは<strong>肥満患者で高めに推算</strong>されるため、実体重の代わりに理想体重の入力も考慮してください。</li>
+        <li>実測CCrの報告値は、単位がmL/minと書かれていても<strong>体表面積補正済み</strong>（mL/min/1.73m²）の施設が多くあります。自施設の表記方法を確認してください。</li>
+        <li>本推算式は成人（18歳以上）向けです。小児には適用できません。</li>
+      </ul>
+    </section>
+
+    <!-- 用語解説 -->
+    <section class="card">
+      <h2>用語解説</h2>
+      <dl class="glossary">
+        <dt>eCCr</dt>
+        <dd>Cockcroft-Gault式（CG式）による推算クレアチニンクリアランス（mL/min）</dd>
+        <dt>eGFRcr</dt>
+        <dd>血清クレアチニン値をもとにした推算糸球体濾過量（mL/min/1.73m²）</dd>
+        <dt>eGFRcys</dt>
+        <dd>血清シスタチンC値をもとにした推算糸球体濾過量（mL/min/1.73m²）。日本人向け推算式による</dd>
+        <dt>標準化（eGFR・eCCr）</dt>
+        <dd>体表面積1.73m²あたりに換算した腎機能。CKD重症度分類（G1〜G5）に使う</dd>
+        <dt>個別化（eGFR・eCCr）</dt>
+        <dd>個々の体格を考慮した腎機能。薬剤の投与量設計に使う</dd>
+      </dl>
+    </section>
+
+  </div>
+
+  <!-- ============ 検査値タブ ============ -->
+  <div class="tabpanel" id="tab-labs">
+
+    <!-- 補正Ca -->
+    <section class="card">
+      <h2>補正Ca（Payne式）</h2>
+      <p class="desc">低アルブミン血症時の見かけ上の低Caを補正する。</p>
+      <div class="field">
+        <label for="ca-meas">実測Ca</label>
+        <input type="number" id="ca-meas" inputmode="decimal" step="0.1" placeholder="7.8">
+        <span class="unit">mg/dL</span>
+      </div>
+      <div class="field">
+        <label for="ca-alb">血清Alb</label>
+        <input type="number" id="ca-alb" inputmode="decimal" step="0.1" placeholder="2.5">
+        <span class="unit">g/dL</span>
+      </div>
+      <div class="btnrow">
+        <button class="btn-reset" type="button" data-reset="ca">リセット</button>
+        <button class="btn-calc" type="button" data-calc="ca">計 算</button>
+      </div>
+      <p class="errmsg" id="err-ca"></p>
+      <table>
+        <tr><th>補正Ca<span id="ca-judge"></span></th>
+          <td class="value empty" id="r-ca">— <span class="u">mg/dL</span></td></tr>
+      </table>
+      <details class="formula">
+        <summary>計算式を見る</summary>
+        <div class="fx">
+          <p><strong>補正Ca</strong> — Payne式<br>
+          <code>補正Ca = 実測Ca + (4 − Alb)</code>（Alb &lt; 4 g/dL のときに適用）</p>
+          <p>判定目安: 8.5未満で低Ca、10.2超で高Ca（施設基準値を優先）</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- mEq⇔mg -->
+    <section class="card">
+      <h2>mEq ⇔ mg 換算（主要電解質イオン）</h2>
+      <p class="desc">mg・mEqのどちらか一方に入力すると相互換算する。</p>
+      <div class="field">
+        <label for="meq-ion">イオン</label>
+        <select id="meq-ion">
+          <option value="23,1">Na+（原子量23・1価）</option>
+          <option value="39.1,1">K+（原子量39.1・1価）</option>
+          <option value="40.08,2">Ca2+（原子量40.08・2価）</option>
+          <option value="24.3,2">Mg2+（原子量24.3・2価）</option>
+          <option value="35.45,1">Cl-（原子量35.45・1価）</option>
+        </select>
+        <span class="unit"></span>
+      </div>
+      <div class="field">
+        <label for="meq-mg">mg 量</label>
+        <input type="number" id="meq-mg" inputmode="decimal" step="0.1" placeholder="mgから変換する場合に入力">
+        <span class="unit">mg</span>
+      </div>
+      <div class="field">
+        <label for="meq-meq">mEq 量</label>
+        <input type="number" id="meq-meq" inputmode="decimal" step="0.1" placeholder="mEqから変換する場合に入力">
+        <span class="unit">mEq</span>
+      </div>
+      <div class="btnrow">
+        <button class="btn-reset" type="button" data-reset="meq">リセット</button>
+        <button class="btn-calc" type="button" data-calc="meq">計 算</button>
+      </div>
+      <p class="errmsg" id="err-meq">どちらか一方の欄だけに数値を入れて計算してください。</p>
+      <table>
+        <tr><th>mg</th><td class="value empty" id="r-meq-mg">— <span class="u">mg</span></td></tr>
+        <tr><th>mEq</th><td class="value empty" id="r-meq-meq">— <span class="u">mEq</span></td></tr>
+      </table>
+      <details class="formula">
+        <summary>計算式を見る</summary>
+        <div class="fx">
+          <p><strong>mg → mEq</strong><br>
+          <code>mEq = mg ÷ 原子量 × 価数</code></p>
+          <p><strong>mEq → mg</strong><br>
+          <code>mg = mEq × 原子量 ÷ 価数</code></p>
+        </div>
+      </details>
+    </section>
+
+    <!-- Na補正速度 -->
+    <section class="card">
+      <h2>Na補正速度チェック</h2>
+      <p class="desc">低Na血症補正時の速度を一般的な安全域の目安と照合する（ODS/脳浮腫予防）。</p>
+      <div class="field">
+        <label for="na-cur">現在Na</label>
+        <input type="number" id="na-cur" inputmode="decimal" step="0.1" placeholder="118">
+        <span class="unit">mEq/L</span>
+      </div>
+      <div class="field">
+        <label for="na-tgt">目標Na</label>
+        <input type="number" id="na-tgt" inputmode="decimal" step="0.1" placeholder="128">
+        <span class="unit">mEq/L</span>
+      </div>
+      <div class="field">
+        <label for="na-hr">予定時間</label>
+        <input type="number" id="na-hr" inputmode="decimal" step="1" placeholder="24">
+        <span class="unit">時間</span>
+      </div>
+      <div class="btnrow">
+        <button class="btn-reset" type="button" data-reset="na">リセット</button>
+        <button class="btn-calc" type="button" data-calc="na">計 算</button>
+      </div>
+      <p class="errmsg" id="err-na"></p>
+      <table>
+        <tr><th>補正速度</th><td class="value empty" id="r-na-rate">— <span class="u">mEq/L/h</span></td></tr>
+        <tr><th>24時間換算<span id="na-judge"></span></th><td class="value empty" id="r-na-24h">— <span class="u">mEq/L/24h</span></td></tr>
+      </table>
+      <details class="formula">
+        <summary>計算式を見る</summary>
+        <div class="fx">
+          <p><strong>補正速度</strong><br>
+          <code>|目標Na − 現在Na| ÷ 予定時間(h)</code></p>
+          <p><strong>24時間換算</strong><br>
+          <code>補正速度 × 24</code> — 一般的な目安 10〜12 mEq/L/24h 以内と照合（病態・ガイドラインで閾値は異なる）</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 水分欠乏量 -->
+    <section class="card">
+      <h2>水分欠乏量（高Na血症時）</h2>
+      <p class="desc">高Na血症時の自由水欠乏量を概算する。</p>
+      <div class="field">
+        <label for="wd-w">体重</label>
+        <input type="number" id="wd-w" inputmode="decimal" step="0.1" placeholder="55">
+        <span class="unit">kg</span>
+      </div>
+      <div class="field">
+        <label for="wd-na">現在Na</label>
+        <input type="number" id="wd-na" inputmode="decimal" step="0.1" placeholder="158">
+        <span class="unit">mEq/L</span>
+      </div>
+      <div class="field">
+        <label for="wd-ratio">体内水分比</label>
+        <select id="wd-ratio">
+          <option value="0.6">成人男性（0.6）</option>
+          <option value="0.5">成人女性・高齢者（0.5）</option>
+        </select>
+        <span class="unit"></span>
+      </div>
+      <div class="btnrow">
+        <button class="btn-reset" type="button" data-reset="wd">リセット</button>
+        <button class="btn-calc" type="button" data-calc="wd">計 算</button>
+      </div>
+      <p class="errmsg" id="err-wd"></p>
+      <table>
+        <tr><th>水分欠乏量</th><td class="value empty" id="r-wd">— <span class="u">L</span></td></tr>
+      </table>
+      <details class="formula">
+        <summary>計算式を見る</summary>
+        <div class="fx">
+          <p><strong>水分欠乏量</strong><br>
+          <code>体重(kg) × 体内水分比 × (現在Na ÷ 140 − 1)</code></p>
+          <p>体内水分比: 成人男性 0.6／成人女性・高齢者 0.5</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 血漿浸透圧 -->
+    <section class="card">
+      <h2>血漿浸透圧（概算）</h2>
+      <p class="desc">Na・血糖・BUNから血漿浸透圧を概算する。</p>
+      <div class="field">
+        <label for="posm-na">Na</label>
+        <input type="number" id="posm-na" inputmode="decimal" step="0.1" placeholder="140">
+        <span class="unit">mEq/L</span>
+      </div>
+      <div class="field">
+        <label for="posm-bs">血糖</label>
+        <input type="number" id="posm-bs" inputmode="decimal" step="1" placeholder="100">
+        <span class="unit">mg/dL</span>
+      </div>
+      <div class="field">
+        <label for="posm-bun">BUN</label>
+        <input type="number" id="posm-bun" inputmode="decimal" step="0.1" placeholder="14">
+        <span class="unit">mg/dL</span>
+      </div>
+      <div class="btnrow">
+        <button class="btn-reset" type="button" data-reset="posm">リセット</button>
+        <button class="btn-calc" type="button" data-calc="posm">計 算</button>
+      </div>
+      <p class="errmsg" id="err-posm"></p>
+      <table>
+        <tr><th>血漿浸透圧<span id="posm-judge"></span></th><td class="value empty" id="r-posm">— <span class="u">mOsm/kg</span></td></tr>
+      </table>
+      <details class="formula">
+        <summary>計算式を見る</summary>
+        <div class="fx">
+          <p><strong>血漿浸透圧（概算）</strong><br>
+          <code>2 × Na + 血糖 ÷ 18 + BUN ÷ 2.8</code></p>
+          <p>正常域の目安: 275〜295 mOsm/kg</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- TSAT -->
+    <section class="card">
+      <h2>TSAT（トランスフェリン飽和度）</h2>
+      <p class="desc">腎性貧血の鉄評価（HIF-PH阻害薬・ESA使用時のモニタリング）。</p>
+      <div class="field">
+        <label for="tsat-fe">血清鉄</label>
+        <input type="number" id="tsat-fe" inputmode="decimal" step="1" placeholder="45">
+        <span class="unit">μg/dL</span>
+      </div>
+      <div class="field">
+        <label for="tsat-tibc">TIBC</label>
+        <input type="number" id="tsat-tibc" inputmode="decimal" step="1" placeholder="280">
+        <span class="unit">μg/dL</span>
+      </div>
+      <div class="field">
+        <label for="tsat-ferritin">フェリチン<span class="opt">任意</span></label>
+        <input type="number" id="tsat-ferritin" inputmode="decimal" step="1" placeholder="80">
+        <span class="unit">ng/mL</span>
+      </div>
+      <div class="btnrow">
+        <button class="btn-reset" type="button" data-reset="tsat">リセット</button>
+        <button class="btn-calc" type="button" data-calc="tsat">計 算</button>
+      </div>
+      <p class="errmsg" id="err-tsat"></p>
+      <table>
+        <tr><th>TSAT<span id="tsat-judge"></span></th><td class="value empty" id="r-tsat">— <span class="u">%</span></td></tr>
+      </table>
+      <details class="formula">
+        <summary>計算式を見る</summary>
+        <div class="fx">
+          <p><strong>TSAT</strong><br>
+          <code>血清鉄 ÷ TIBC × 100</code>（%）</p>
+          <p>判定目安: 20%未満で低値（フェリチン &lt; 100 ng/mL 併存なら絶対的鉄欠乏疑い）、50%超で高値</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 検査値の注意 -->
+    <section class="card notes">
+      <h2>読みかた・注意（検査値）</h2>
+      <ul>
+        <li>Na補正速度の安全域は病態・ガイドラインにより異なる。ここで示す目安（24hあたり10〜12mEq/L）は一般的な参考値であり、個別の閾値は必ず一次情報で確認する。</li>
+        <li>TSAT・フェリチンの判定目安は簡易版。腎性貧血診療ガイドの基準値と併せて確認する。</li>
+        <li>補正Ca・血漿浸透圧の正常域は一般的な目安。施設基準値を優先する。</li>
+      </ul>
+    </section>
+
+  </div>
+
+  <!-- ============ 輸液タブ ============ -->
+  <div class="tabpanel" id="tab-infusion">
+
+    <!-- 点滴速度 -->
+    <section class="card">
+      <h2>点滴速度（総量・時間 → mL/h・滴/分）</h2>
+      <p class="desc">総量と予定時間から流速と滴下数を求める。</p>
+      <div class="field">
+        <label for="drip-vol">総量</label>
+        <input type="number" id="drip-vol" inputmode="decimal" step="1" placeholder="500">
+        <span class="unit">mL</span>
+      </div>
+      <div class="field">
+        <label for="drip-hr">予定時間</label>
+        <input type="number" id="drip-hr" inputmode="decimal" step="0.1" placeholder="6">
+        <span class="unit">時間</span>
+      </div>
+      <div class="field">
+        <label for="drip-factor">滴数係数</label>
+        <select id="drip-factor">
+          <option value="20">成人セット（20滴/mL）</option>
+          <option value="60">小児・微量セット（60滴/mL）</option>
+        </select>
+        <span class="unit"></span>
+      </div>
+      <div class="btnrow">
+        <button class="btn-reset" type="button" data-reset="drip">リセット</button>
+        <button class="btn-calc" type="button" data-calc="drip">計 算</button>
+      </div>
+      <p class="errmsg" id="err-drip"></p>
+      <table>
+        <tr><th>速度</th><td class="value empty" id="r-drip-rate">— <span class="u">mL/h</span></td></tr>
+        <tr><th>滴数</th><td class="value empty" id="r-drip-gtt">— <span class="u">滴/分</span></td></tr>
+      </table>
+      <details class="formula">
+        <summary>計算式を見る</summary>
+        <div class="fx">
+          <p><strong>速度</strong><br>
+          <code>速度(mL/h) = 総量(mL) ÷ 予定時間(h)</code></p>
+          <p><strong>滴数</strong><br>
+          <code>滴数(滴/分) = 速度(mL/h) × 滴数係数 ÷ 60</code>（成人セット 20滴/mL・小児 60滴/mL）</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 希釈・濃度計算 -->
+    <section class="card">
+      <h2>希釈・濃度計算</h2>
+      <p class="desc">「薬剤量・総量・濃度」のうち<strong>2つ</strong>を入力すると残り1つを計算する。</p>
+      <div class="field">
+        <label for="dil-mg">薬剤量</label>
+        <input type="number" id="dil-mg" inputmode="decimal" step="0.1" placeholder="任意入力">
+        <span class="unit">mg</span>
+      </div>
+      <div class="field">
+        <label for="dil-vol">総量（希釈後）</label>
+        <input type="number" id="dil-vol" inputmode="decimal" step="1" placeholder="任意入力">
+        <span class="unit">mL</span>
+      </div>
+      <div class="field">
+        <label for="dil-conc">濃度</label>
+        <input type="number" id="dil-conc" inputmode="decimal" step="0.01" placeholder="任意入力">
+        <span class="unit">mg/mL</span>
+      </div>
+      <div class="btnrow">
+        <button class="btn-reset" type="button" data-reset="dil">リセット</button>
+        <button class="btn-calc" type="button" data-calc="dil">計 算</button>
+      </div>
+      <p class="errmsg" id="err-dil">3項目のうちちょうど2つだけを入力してください。</p>
+      <table>
+        <tr><th>薬剤量</th><td class="value empty" id="r-dil-mg">— <span class="u">mg</span></td></tr>
+        <tr><th>総量</th><td class="value empty" id="r-dil-vol">— <span class="u">mL</span></td></tr>
+        <tr><th>濃度</th><td class="value empty" id="r-dil-conc">— <span class="u">mg/mL</span></td></tr>
+        <tr><th>% 表記</th><td class="value empty" id="r-dil-pct">— <span class="u">%</span></td></tr>
+      </table>
+      <details class="formula">
+        <summary>計算式を見る</summary>
+        <div class="fx">
+          <p><strong>濃度</strong><br>
+          <code>濃度(mg/mL) = 薬剤量(mg) ÷ 総量(mL)</code></p>
+          <p><strong>% 表記</strong><br>
+          <code>%(w/v) = 濃度(mg/mL) ÷ 10</code>（1% = 10 mg/mL）</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 投与可能時間 -->
+    <section class="card">
+      <h2>投与可能時間</h2>
+      <p class="desc">残量と流速から投与できる残り時間を求める。</p>
+      <div class="field">
+        <label for="rem-vol">残量</label>
+        <input type="number" id="rem-vol" inputmode="decimal" step="1" placeholder="180">
+        <span class="unit">mL</span>
+      </div>
+      <div class="field">
+        <label for="rem-rate">流速</label>
+        <input type="number" id="rem-rate" inputmode="decimal" step="1" placeholder="60">
+        <span class="unit">mL/h</span>
+      </div>
+      <div class="btnrow">
+        <button class="btn-reset" type="button" data-reset="rem">リセット</button>
+        <button class="btn-calc" type="button" data-calc="rem">計 算</button>
+      </div>
+      <p class="errmsg" id="err-rem"></p>
+      <table>
+        <tr><th>残り時間</th><td class="value empty" id="r-rem">— <span class="u">時間</span></td></tr>
+      </table>
+      <details class="formula">
+        <summary>計算式を見る</summary>
+        <div class="fx">
+          <p><strong>残り時間</strong><br>
+          <code>残り時間(h) = 残量(mL) ÷ 流速(mL/h)</code></p>
+        </div>
+      </details>
+    </section>
+
+  </div>
+
+  <!-- 共通の注意 -->
+  <section class="card notes">
+    <h2>共通の注意</h2>
+    <ul>
+      <li>本ツールは<strong>自宅・自己学習用</strong>。業務中の患者対応の判断には使わない（院内の正規ツール・成書・添付文書で確認する）。</li>
+      <li>患者個人情報は入力しない（入力欄もない）。</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p class="line">※本ツールの結果はすべて参考値です。最終判断は必ず添付文書・ガイドラインで確認してください。</p>
+    <p>完全オフライン動作 / 入力データはどこにも保存・送信されません<br>
+    腎機能タブの参考: 日本腎臓病薬物療法学会「eGFR・eCCrの計算」（jsnp.org/egfr/）</p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function fmt(v, digits) {
+    var d = (digits === undefined) ? 1 : digits;
+    return (Math.round(v * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d);
+  }
+
+  function setVal(id, v, digits) {
+    var td = $(id);
+    var unit = td.querySelector(".u").outerHTML;
+    if (v === null || v === undefined || !isFinite(v)) {
+      td.classList.add("empty");
+      td.innerHTML = "— " + unit;
+    } else {
+      td.classList.remove("empty");
+      td.innerHTML = fmt(v, digits) + " " + unit;
+    }
+  }
+
+  function num(id) {
+    var el = $(id);
+    if (!el) return null;
+    var v = parseFloat(el.value);
+    return isFinite(v) ? v : null;
+  }
+
+  function numPos(id) {
+    var v = num(id);
+    return (v !== null && v > 0) ? v : null;
+  }
+
+  function setJudge(id, text, cls) {
+    var el = $(id);
+    if (!text) { el.innerHTML = ""; return; }
+    el.innerHTML = '<span class="judge ' + cls + '">' + text + '</span>';
+  }
+
+  // ---- タブ切替（タイトル・サブタイトルも切替）----
+  var TAB_META = {
+    renal: {
+      title: "腎機能計算ノート",
+      sub: "eGFR・eCCr — 薬物投与量設定に使用する腎機能推算式（日本人向け）"
+    },
+    labs: {
+      title: "検査値ノート",
+      sub: "補正Ca・電解質換算・Na補正・浸透圧・TSAT — 自分専用・学習用"
+    },
+    infusion: {
+      title: "輸液ノート",
+      sub: "点滴速度・希釈濃度・投与可能時間 — 自分専用・学習用"
+    }
+  };
+
+  document.querySelectorAll(".tabbtn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".tabbtn").forEach(function (b) { b.classList.remove("active"); });
+      document.querySelectorAll(".tabpanel").forEach(function (p) { p.classList.remove("active"); });
+      btn.classList.add("active");
+      $("tab-" + btn.dataset.tab).classList.add("active");
+      var meta = TAB_META[btn.dataset.tab];
+      $("app-title").textContent = meta.title;
+      $("app-sub").textContent = meta.sub;
+      document.title = meta.title + " — MedKit";
+    });
+  });
+
+  // ============ 腎機能タブ ============
+  function stageOf(egfr) {
+    if (egfr >= 90) return "G1";
+    if (egfr >= 60) return "G2";
+    if (egfr >= 45) return "G3a";
+    if (egfr >= 30) return "G3b";
+    if (egfr >= 15) return "G4";
+    return "G5";
+  }
+
+  function clearRenalResults() {
+    ["r-egfr-std","r-egfr-ind","r-eccr-ind","r-eccr-std","r-cys-std","r-cys-ind","r-bsa","r-ibw"]
+      .forEach(function (id) { setVal(id, null); });
+    $("stage-badge").innerHTML = "";
+    $("err-renal").textContent = "";
+  }
+
+  function calcRenal() {
+    var h = numPos("height"), w = numPos("weight"), age = numPos("age"),
+        cr = numPos("scr"), cys = numPos("scysc");
+    var female = document.querySelector('input[name="sex"]:checked').value === "F";
+    var err = $("err-renal");
+    err.textContent = "";
+
+    if (!h || !w || !age || !cr) {
+      clearRenalResults();
+      err.textContent = "身長・体重・年齢・血清クレアチニンをすべて入力してください。";
+      return;
+    }
+    if (age < 18) {
+      clearRenalResults();
+      err.textContent = "本推算式は18歳以上が対象です（小児には適用できません）。";
+      return;
+    }
+
+    // 体表面積（Du Bois式）: 0.007184 × 身長^0.725 × 体重^0.425
+    var bsa = 0.007184 * Math.pow(h, 0.725) * Math.pow(w, 0.425);
+
+    // 理想体重（BMI 22 基準）: 22 × 身長(m)^2
+    var ibw = 22 * Math.pow(h / 100, 2);
+
+    // eGFRcr（日本人GFR推算式・JSN 2008）
+    var egfrStd = 194 * Math.pow(cr, -1.094) * Math.pow(age, -0.287);
+    if (female) egfrStd *= 0.739;
+    var egfrInd = egfrStd * bsa / 1.73;
+
+    // eCCr（Cockcroft-Gault式）
+    var eccrInd = (140 - age) * w / (72 * cr);
+    if (female) eccrInd *= 0.85;
+    var eccrStd = eccrInd * 1.73 / bsa;
+
+    setVal("r-bsa", bsa);
+    setVal("r-ibw", ibw);
+    setVal("r-egfr-std", egfrStd);
+    setVal("r-egfr-ind", egfrInd);
+    setVal("r-eccr-ind", eccrInd);
+    setVal("r-eccr-std", eccrStd);
+
+    var st = stageOf(egfrStd);
+    $("stage-badge").innerHTML = '<span class="stage ' + st + '">' + st + "</span>";
+
+    // eGFRcys（日本人向け推算式）: 男性 (104×CysC^-1.019×0.996^年齢)−8 / 女性はさらに×0.929
+    if (cys) {
+      var cysStd = 104 * Math.pow(cys, -1.019) * Math.pow(0.996, age);
+      if (female) cysStd *= 0.929;
+      cysStd -= 8;
+      if (cysStd < 0) cysStd = 0;
+      setVal("r-cys-std", cysStd);
+      setVal("r-cys-ind", cysStd * bsa / 1.73);
+    } else {
+      setVal("r-cys-std", null);
+      setVal("r-cys-ind", null);
+    }
+  }
+
+  function resetRenal() {
+    ["height","weight","age","scr","scysc"].forEach(function (id) { $(id).value = ""; });
+    document.querySelector('input[name="sex"][value="M"]').checked = true;
+    clearRenalResults();
+  }
+
+  // ============ 検査値タブ ============
+
+  // ---- 補正Ca ----
+  function calcCa() {
+    var ca = num("ca-meas"), alb = num("ca-alb");
+    var err = $("err-ca"); err.textContent = "";
+    if (ca === null || alb === null) {
+      setVal("r-ca", null); setJudge("ca-judge", "", "");
+      err.textContent = "実測CaとAlbを入力してください。";
+      return;
+    }
+    var corrected = ca + (4 - alb);
+    setVal("r-ca", corrected, 1);
+    if (corrected < 8.5) setJudge("ca-judge", "低Ca", "low");
+    else if (corrected > 10.2) setJudge("ca-judge", "高Ca", "high");
+    else setJudge("ca-judge", "正常域", "ok");
+  }
+  function resetCa() {
+    ["ca-meas", "ca-alb"].forEach(function (id) { $(id).value = ""; });
+    setVal("r-ca", null); setJudge("ca-judge", "", "");
+    $("err-ca").textContent = "";
+  }
+
+  // ---- mEq⇔mg ----
+  function calcMeq() {
+    var err = $("err-meq");
+    var parts = $("meq-ion").value.split(",");
+    var mw = parseFloat(parts[0]), z = parseFloat(parts[1]);
+    var mg = num("meq-mg"), meq = num("meq-meq");
+    if ((mg === null) === (meq === null)) {
+      setVal("r-meq-mg", null); setVal("r-meq-meq", null);
+      err.textContent = "mg・mEqのどちらか一方だけに数値を入れてください。";
+      return;
+    }
+    err.textContent = "";
+    if (mg !== null) {
+      var calcMeqVal = mg / mw * z;
+      setVal("r-meq-mg", mg, 2);
+      setVal("r-meq-meq", calcMeqVal, 2);
+    } else {
+      var calcMgVal = meq * mw / z;
+      setVal("r-meq-mg", calcMgVal, 2);
+      setVal("r-meq-meq", meq, 2);
+    }
+  }
+  function resetMeq() {
+    ["meq-mg", "meq-meq"].forEach(function (id) { $(id).value = ""; });
+    setVal("r-meq-mg", null); setVal("r-meq-meq", null);
+    $("err-meq").textContent = "どちらか一方の欄だけに数値を入れて計算してください。";
+  }
+
+  // ---- Na補正速度 ----
+  function calcNa() {
+    var cur = num("na-cur"), tgt = num("na-tgt"), hr = num("na-hr");
+    var err = $("err-na"); err.textContent = "";
+    if (cur === null || tgt === null || hr === null || hr <= 0) {
+      setVal("r-na-rate", null); setVal("r-na-24h", null); setJudge("na-judge", "", "");
+      err.textContent = "現在Na・目標Na・予定時間（0より大きい値）を入力してください。";
+      return;
+    }
+    var rate = Math.abs(tgt - cur) / hr;
+    var per24 = rate * 24;
+    setVal("r-na-rate", rate, 2);
+    setVal("r-na-24h", per24, 1);
+    if (per24 > 12) setJudge("na-judge", "上限超過の可能性", "over");
+    else if (per24 > 10) setJudge("na-judge", "上限付近", "high");
+    else setJudge("na-judge", "目安内", "ok");
+  }
+  function resetNa() {
+    ["na-cur", "na-tgt", "na-hr"].forEach(function (id) { $(id).value = ""; });
+    setVal("r-na-rate", null); setVal("r-na-24h", null); setJudge("na-judge", "", "");
+    $("err-na").textContent = "";
+  }
+
+  // ---- 水分欠乏量 ----
+  function calcWd() {
+    var w = num("wd-w"), na = num("wd-na"), ratio = parseFloat($("wd-ratio").value);
+    var err = $("err-wd"); err.textContent = "";
+    if (w === null || na === null || w <= 0 || na <= 0) {
+      setVal("r-wd", null);
+      err.textContent = "体重と現在Naを入力してください。";
+      return;
+    }
+    var deficit = w * ratio * (na / 140 - 1);
+    setVal("r-wd", deficit, 2);
+  }
+  function resetWd() {
+    ["wd-w", "wd-na"].forEach(function (id) { $(id).value = ""; });
+    $("wd-ratio").selectedIndex = 0;
+    setVal("r-wd", null);
+    $("err-wd").textContent = "";
+  }
+
+  // ---- 血漿浸透圧 ----
+  function calcPosm() {
+    var na = num("posm-na"), bs = num("posm-bs"), bun = num("posm-bun");
+    var err = $("err-posm"); err.textContent = "";
+    if (na === null || bs === null || bun === null) {
+      setVal("r-posm", null); setJudge("posm-judge", "", "");
+      err.textContent = "Na・血糖・BUNを入力してください。";
+      return;
+    }
+    var posm = 2 * na + bs / 18 + bun / 2.8;
+    setVal("r-posm", posm, 1);
+    if (posm < 275) setJudge("posm-judge", "低張", "low");
+    else if (posm > 295) setJudge("posm-judge", "高張", "high");
+    else setJudge("posm-judge", "正常域", "ok");
+  }
+  function resetPosm() {
+    ["posm-na", "posm-bs", "posm-bun"].forEach(function (id) { $(id).value = ""; });
+    setVal("r-posm", null); setJudge("posm-judge", "", "");
+    $("err-posm").textContent = "";
+  }
+
+  // ---- TSAT ----
+  function calcTsat() {
+    var fe = num("tsat-fe"), tibc = num("tsat-tibc"), ferritin = num("tsat-ferritin");
+    var err = $("err-tsat"); err.textContent = "";
+    if (fe === null || tibc === null || tibc <= 0) {
+      setVal("r-tsat", null); setJudge("tsat-judge", "", "");
+      err.textContent = "血清鉄とTIBC（0より大きい値）を入力してください。";
+      return;
+    }
+    var tsat = fe / tibc * 100;
+    setVal("r-tsat", tsat, 1);
+    if (tsat < 20) {
+      if (ferritin !== null && ferritin < 100) setJudge("tsat-judge", "絶対的鉄欠乏疑い", "low");
+      else setJudge("tsat-judge", "低値", "low");
+    } else if (tsat > 50) {
+      setJudge("tsat-judge", "高値", "high");
+    } else {
+      setJudge("tsat-judge", "正常域", "ok");
+    }
+  }
+  function resetTsat() {
+    ["tsat-fe", "tsat-tibc", "tsat-ferritin"].forEach(function (id) { $(id).value = ""; });
+    setVal("r-tsat", null); setJudge("tsat-judge", "", "");
+    $("err-tsat").textContent = "";
+  }
+
+  // ============ 輸液タブ ============
+
+  // ---- 点滴速度 ----
+  function calcDrip() {
+    var vol = num("drip-vol"), hr = num("drip-hr"), factor = parseFloat($("drip-factor").value);
+    var err = $("err-drip"); err.textContent = "";
+    if (vol === null || hr === null || hr <= 0) {
+      setVal("r-drip-rate", null); setVal("r-drip-gtt", null);
+      err.textContent = "総量と予定時間（0より大きい値）を入力してください。";
+      return;
+    }
+    var rate = vol / hr;
+    var gtt = rate * factor / 60;
+    setVal("r-drip-rate", rate, 1);
+    setVal("r-drip-gtt", gtt, 1);
+  }
+  function resetDrip() {
+    ["drip-vol", "drip-hr"].forEach(function (id) { $(id).value = ""; });
+    $("drip-factor").selectedIndex = 0;
+    setVal("r-drip-rate", null); setVal("r-drip-gtt", null);
+    $("err-drip").textContent = "";
+  }
+
+  // ---- 希釈・濃度計算 ----
+  function calcDil() {
+    var mg = num("dil-mg"), vol = num("dil-vol"), conc = num("dil-conc");
+    var err = $("err-dil"); err.textContent = "";
+    var filled = [mg, vol, conc].filter(function (v) { return v !== null; }).length;
+    if (filled !== 2) {
+      setVal("r-dil-mg", null); setVal("r-dil-vol", null); setVal("r-dil-conc", null); setVal("r-dil-pct", null);
+      err.textContent = "3項目のうちちょうど2つだけを入力してください。";
+      return;
+    }
+    var outMg, outVol, outConc;
+    if (mg !== null && vol !== null) {
+      outMg = mg; outVol = vol; outConc = mg / vol;
+    } else if (mg !== null && conc !== null) {
+      outMg = mg; outConc = conc; outVol = mg / conc;
+    } else {
+      outVol = vol; outConc = conc; outMg = vol * conc;
+    }
+    setVal("r-dil-mg", outMg, 2);
+    setVal("r-dil-vol", outVol, 2);
+    setVal("r-dil-conc", outConc, 3);
+    setVal("r-dil-pct", outConc / 10, 3);
+  }
+  function resetDil() {
+    ["dil-mg", "dil-vol", "dil-conc"].forEach(function (id) { $(id).value = ""; });
+    setVal("r-dil-mg", null); setVal("r-dil-vol", null); setVal("r-dil-conc", null); setVal("r-dil-pct", null);
+    $("err-dil").textContent = "3項目のうちちょうど2つだけを入力してください。";
+  }
+
+  // ---- 投与可能時間 ----
+  function calcRem() {
+    var vol = num("rem-vol"), rate = num("rem-rate");
+    var err = $("err-rem"); err.textContent = "";
+    if (vol === null || rate === null || rate <= 0) {
+      setVal("r-rem", null);
+      err.textContent = "残量と流速（0より大きい値）を入力してください。";
+      return;
+    }
+    setVal("r-rem", vol / rate, 2);
+  }
+  function resetRem() {
+    ["rem-vol", "rem-rate"].forEach(function (id) { $(id).value = ""; });
+    setVal("r-rem", null);
+    $("err-rem").textContent = "";
+  }
+
+  // ============ ボタン紐付け ============
+  var CALC = { renal: calcRenal,
+               ca: calcCa, meq: calcMeq, na: calcNa, wd: calcWd, posm: calcPosm, tsat: calcTsat,
+               drip: calcDrip, dil: calcDil, rem: calcRem };
+  var RESET = { renal: resetRenal,
+                ca: resetCa, meq: resetMeq, na: resetNa, wd: resetWd, posm: resetPosm, tsat: resetTsat,
+                drip: resetDrip, dil: resetDil, rem: resetRem };
+
+  document.querySelectorAll("[data-calc]").forEach(function (btn) {
+    btn.addEventListener("click", function () { CALC[btn.dataset.calc](); });
+  });
+  document.querySelectorAll("[data-reset]").forEach(function (btn) {
+    btn.addEventListener("click", function () { RESET[btn.dataset.reset](); });
+  });
+
+  // Enterキーでも計算（同じカード内のdata-calcボタンを実行。腎機能タブは入力カードと結果カードが分かれているためタブ内で探す）
+  document.querySelectorAll('input[type="number"]').forEach(function (el) {
+    el.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter") return;
+      var card = el.closest(".card");
+      var btn = card && card.querySelector("[data-calc]");
+      if (!btn) {
+        var panel = el.closest(".tabpanel");
+        btn = panel && panel.querySelector("[data-calc]");
+      }
+      if (btn) btn.click();
+    });
+  });
+})();
+</script>
+</body>
+</html>
